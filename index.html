@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Horario Semanal Dinámico 36h</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+        background: #f8f8f8;
+      }
+      h2 {
+        text-align: center;
+        font-size: 1.5em;
+      }
+      .tabla-container {
+        overflow-x: auto;
+        margin-top: 10px;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        max-width: 600px;
+        margin-left: auto;
+        margin-right: auto;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        min-width: 400px;
+      }
+      th,
+      td {
+        padding: 10px;
+        border: 1px solid #ccc;
+        text-align: center;
+      }
+      th {
+        background-color: #f0f0f0;
+        font-weight: bold;
+      }
+      .manana {
+        background-color: #d9f9d9;
+      }
+      .manana-corta {
+        background-color: #d9f9d9;
+        font-weight: bold;
+      }
+      .tarde {
+        background-color: #f9d9d9;
+      }
+      .fijo {
+        font-weight: bold;
+        color: #006600;
+      }
+      .totales {
+        margin-top: 15px;
+        text-align: center;
+        font-weight: bold;
+        font-size: 1.2em;
+      }
+      @media (max-width: 600px) {
+        th,
+        td {
+          padding: 8px;
+          font-size: 0.9em;
+        }
+        h2 {
+          font-size: 1.2em;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <h2 id="titulo">Horario Semanal</h2>
+
+    <div class="tabla-container" id="tabla"></div>
+    <div class="totales" id="totales"></div>
+    <p class="totales"><a href="j.html">Juanjo</a> <a href="r.html">Rafa</a></p>
+    <p class="totales"><a href="./index.html">Ambos</a></p>
+
+    <script>
+      // Fecha base para la alternancia (miércoles 22 julio 2025)
+      const semanaBase = new Date("2025-07-22");
+      const hoy = new Date();
+
+      // Calcular semanas transcurridas
+      const diffMs = hoy.getTime() - semanaBase.getTime();
+      const semanasPasadas = Math.floor(diffMs / (1000 * 60 * 60 * 24 * 7));
+
+      // Tipo horario: alterna cada semana
+      const tipoHorario = semanasPasadas % 2 === 0 ? 1 : 2;
+
+      const dias = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes"];
+
+      // Horarios con mañana corta (6h), mañana normal (7h), tarde (8h)
+      const horariosTipo1 = [
+        [
+          { turno: "manana", horas: 7, corta: false },
+          { turno: "tarde", horas: 8 },
+        ], // Lunes
+        [
+          { turno: "tarde", horas: 8 },
+          { turno: "manana", horas: 6, corta: true },
+        ], // Martes (Rafa corta)
+        [
+          { turno: "manana", horas: 7, corta: false },
+          { turno: "tarde", horas: 8 },
+        ], // Miércoles
+        [
+          { turno: "manana", horas: 6, corta: true },
+          { turno: "tarde", horas: 8 },
+        ], // Jueves (Juanjo corta)
+        [
+          { turno: "tarde", horas: 8 },
+          { turno: "manana", horas: 6, corta: true },
+        ], // Viernes (Rafa corta)
+      ];
+
+      // Tipo 2 = mismo que tipo 1 pero L,M,X intercambiados
+      const horariosTipo2 = horariosTipo1.map((turnos, index) => {
+        if (index <= 2) {
+          // Intercambiar Juanjo y Rafa en lunes, martes y miércoles
+          return [turnos[1], turnos[0]];
+        }
+        // Jueves y viernes igual que tipo 1
+        return turnos;
+      });
+
+      const horarios = {
+        1: horariosTipo1,
+        2: horariosTipo2,
+      };
+
+      function textoTurno(t) {
+        if (t.turno === "manana") {
+          return t.corta ? "8:00 – 14:00 (6 h)" : "8:00 – 15:00 (7 h)";
+        } else {
+          return "10:00 – 19:00 (8 h)";
+        }
+      }
+
+      document.getElementById(
+        "titulo"
+      ).textContent = `Horario Semanal (tipo ${tipoHorario})`;
+
+      const tablaContainer = document.getElementById("tabla");
+      const tabla = document.createElement("table");
+      const thead = tabla.createTHead();
+      const tbody = tabla.createTBody();
+
+      const headerRow = thead.insertRow();
+      ["Día", "Juanjo", "Rafa"].forEach((txt) => {
+        const th = document.createElement("th");
+        th.textContent = txt;
+        headerRow.appendChild(th);
+      });
+
+      let totalJuanjo = 0;
+      let totalRafa = 0;
+
+      horarios[tipoHorario].forEach((turnos, i) => {
+        const row = tbody.insertRow();
+        const cellDia = row.insertCell();
+        cellDia.textContent = dias[i];
+
+        const cellJuanjo = row.insertCell();
+        const cellRafa = row.insertCell();
+
+        const juanjo = turnos[0];
+        const rafa = turnos[1];
+
+        cellJuanjo.textContent = textoTurno(juanjo);
+        cellRafa.textContent = textoTurno(rafa);
+
+        // Colores y destacado
+        if (juanjo.turno === "manana") {
+          cellJuanjo.classList.add(juanjo.corta ? "manana-corta" : "manana");
+        } else {
+          cellJuanjo.classList.add("tarde");
+        }
+
+        if (rafa.turno === "manana") {
+          cellRafa.classList.add(rafa.corta ? "manana-corta" : "manana");
+        } else {
+          cellRafa.classList.add("tarde");
+        }
+
+        // Fijos (jueves Juanjo, viernes Rafa)
+        if (dias[i] === "Jueves") cellJuanjo.classList.add("fijo");
+        if (dias[i] === "Viernes") cellRafa.classList.add("fijo");
+
+        totalJuanjo += juanjo.horas;
+        totalRafa += rafa.horas;
+      });
+
+      tablaContainer.appendChild(tabla);
+
+      const totalesDiv = document.getElementById("totales");
+      totalesDiv.textContent = `Total Juanjo: ${totalJuanjo} h • Total Rafa: ${totalRafa} h`;
+    </script>
+  </body>
+</html>

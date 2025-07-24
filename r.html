@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Horario Semanal Rafa</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+        background: #f8f8f8;
+      }
+      h2 {
+        text-align: center;
+        font-size: 1.5em;
+      }
+      .hoy {
+        background-color: #ffe7d9;
+        border-left: 5px solid #e67e22;
+        padding: 12px 20px;
+        margin-bottom: 20px;
+        font-size: 1.2em;
+        max-width: 500px;
+        margin-left: auto;
+        margin-right: auto;
+        border-radius: 5px;
+        box-shadow: 0 1px 5px rgba(0, 0, 0, 0.1);
+      }
+      .tabla-container {
+        overflow-x: auto;
+        margin-top: 10px;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        max-width: 500px;
+        margin-left: auto;
+        margin-right: auto;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        min-width: 300px;
+      }
+      th,
+      td {
+        padding: 10px;
+        border: 1px solid #ccc;
+        text-align: center;
+      }
+      th {
+        background-color: #f0f0f0;
+        font-weight: bold;
+      }
+      .manana {
+        background-color: #d9f9d9;
+      }
+      .manana-corta {
+        background-color: #d9f9d9;
+        font-weight: bold;
+      }
+      .tarde {
+        background-color: #f9d9d9;
+      }
+      .fijo {
+        font-weight: bold;
+        color: #b35400;
+      }
+      .totales {
+        margin-top: 15px;
+        text-align: center;
+        font-weight: bold;
+        font-size: 1.2em;
+      }
+      @media (max-width: 600px) {
+        th,
+        td {
+          padding: 8px;
+          font-size: 0.9em;
+        }
+        h2 {
+          font-size: 1.2em;
+        }
+        .hoy {
+          font-size: 1em;
+          padding: 10px 15px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Caja para mostrar el día y horario de hoy para Rafa -->
+    <div class="hoy" id="hoyHorario">
+      <!-- Se rellena dinámicamente -->
+    </div>
+
+    <h2 id="titulo">Horario Semanal - Rafa</h2>
+
+    <div class="tabla-container" id="tabla"></div>
+    <div class="totales" id="totales"></div>
+    <p class="totales"><a href="j.html">Juanjo</a> <a href="r.html">Rafa</a></p>
+    <p class="totales"><a href="./index.html">Ambos</a></p>
+
+    <script>
+      const semanaBase = new Date("2025-07-22");
+      const hoy = new Date();
+      const diffMs = hoy.getTime() - semanaBase.getTime();
+      const semanasPasadas = Math.floor(diffMs / (1000 * 60 * 60 * 24 * 7));
+      const tipoHorario = semanasPasadas % 2 === 0 ? 1 : 2;
+
+      const dias = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes"];
+
+      const horariosTipo1 = [
+        [
+          { turno: "manana", horas: 7, corta: false },
+          { turno: "tarde", horas: 8 },
+        ],
+        [
+          { turno: "tarde", horas: 8 },
+          { turno: "manana", horas: 6, corta: true },
+        ],
+        [
+          { turno: "manana", horas: 7, corta: false },
+          { turno: "tarde", horas: 8 },
+        ],
+        [
+          { turno: "manana", horas: 6, corta: true },
+          { turno: "tarde", horas: 8 },
+        ],
+        [
+          { turno: "tarde", horas: 8 },
+          { turno: "manana", horas: 6, corta: true },
+        ],
+      ];
+
+      const horariosTipo2 = horariosTipo1.map((turnos, index) => {
+        if (index <= 2) {
+          return [turnos[1], turnos[0]];
+        }
+        return turnos;
+      });
+
+      const horarios = {
+        1: horariosTipo1,
+        2: horariosTipo2,
+      };
+
+      function textoTurno(t) {
+        if (t.turno === "manana") {
+          return t.corta ? "8:00 – 14:00 (6 h)" : "8:00 – 15:00 (7 h)";
+        } else {
+          return "10:00 – 19:00 (8 h)";
+        }
+      }
+
+      // Mostrar solo el día y horario de hoy para Rafa
+      function mostrarHorarioHoy() {
+        const diaSemana = hoy.getDay();
+        if (diaSemana < 1 || diaSemana > 5) {
+          document.getElementById("hoyHorario").textContent =
+            "Hoy no hay jornada laboral.";
+          return;
+        }
+        const indiceDia = diaSemana - 1;
+        const turnosHoy = horarios[tipoHorario][indiceDia];
+        const turnoRafa = turnosHoy[1]; // Rafa siempre segundo turno
+
+        const diaNombre = dias[indiceDia];
+        const texto = `<strong>Hoy es ${diaNombre}</strong><br>Horario: ${textoTurno(
+          turnoRafa
+        )}`;
+
+        document.getElementById("hoyHorario").innerHTML = texto;
+      }
+
+      mostrarHorarioHoy();
+
+      document.getElementById(
+        "titulo"
+      ).textContent = `Horario Semanal (tipo ${tipoHorario}) - Rafa`;
+
+      const tablaContainer = document.getElementById("tabla");
+      const tabla = document.createElement("table");
+      const thead = tabla.createTHead();
+      const tbody = tabla.createTBody();
+
+      const headerRow = thead.insertRow();
+      ["Día", "Rafa"].forEach((txt) => {
+        const th = document.createElement("th");
+        th.textContent = txt;
+        headerRow.appendChild(th);
+      });
+
+      let totalRafa = 0;
+
+      horarios[tipoHorario].forEach((turnos, i) => {
+        const row = tbody.insertRow();
+        const cellDia = row.insertCell();
+        cellDia.textContent = dias[i];
+
+        const cellRafa = row.insertCell();
+        const rafa = turnos[1];
+
+        cellRafa.textContent = textoTurno(rafa);
+
+        if (rafa.turno === "manana") {
+          cellRafa.classList.add(rafa.corta ? "manana-corta" : "manana");
+        } else {
+          cellRafa.classList.add("tarde");
+        }
+
+        if (dias[i] === "Viernes") cellRafa.classList.add("fijo");
+
+        totalRafa += rafa.horas;
+      });
+
+      tablaContainer.appendChild(tabla);
+
+      const totalesDiv = document.getElementById("totales");
+      totalesDiv.textContent = `Total Rafa: ${totalRafa} h`;
+    </script>
+  </body>
+</html>
